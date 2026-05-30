@@ -1,0 +1,19 @@
+[Unit]
+Description=Network Profiler collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# install.sh rewrites __DIR__ and __USER__ to real values.
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/.venv/bin/python __DIR__/collector.py
+Restart=always
+RestartSec=10
+User=__USER__
+# Let the collector keep running for weeks; restart on any crash.
+StandardOutput=append:__DIR__/data/collector.log
+StandardError=append:__DIR__/data/collector.log
+
+[Install]
+WantedBy=multi-user.target

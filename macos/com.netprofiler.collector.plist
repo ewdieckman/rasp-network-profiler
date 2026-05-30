@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- install-macos.sh rewrites __DIR__ to the real project path. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.netprofiler.collector</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__DIR__/.venv/bin/python</string>
+    <string>__DIR__/collector.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>__DIR__</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>__DIR__/data/collector.log</string>
+  <key>StandardErrorPath</key><string>__DIR__/data/collector.log</string>
+</dict></plist>

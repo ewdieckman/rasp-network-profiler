@@ -1,0 +1,15 @@
+[Unit]
+Description=Network Profiler dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/.venv/bin/python __DIR__/dashboard.py
+Restart=always
+RestartSec=10
+User=__USER__
+
+[Install]
+WantedBy=multi-user.target
