@@ -33,6 +33,15 @@ DB_PATH = _env("NETPROF_DB", os.path.join(os.path.dirname(os.path.abspath(__file
 # interface it finds (usually wlan0 on a Pi).
 WIFI_INTERFACE = _env("NETPROF_WIFI_IFACE", "auto")
 
+# Wired ethernet baseline. If the device is ALSO plugged into ethernet, the
+# collector pings the same gateway + internet targets over the cable so you can
+# compare wifi vs wired directly. This is the most decisive test: if the
+# internet is slow over wifi but fine over the cable to the same router/ISP,
+# the problem is your wifi. "auto" finds the first wired interface with a cable
+# plugged in; the baseline is skipped automatically when no cable is present.
+ETHERNET_ENABLED = _env("NETPROF_ETHERNET", "1") == "1"
+ETHERNET_INTERFACE = _env("NETPROF_ETH_IFACE", "auto")
+
 # How often to take a sample (latency / loss / wifi), in seconds.
 SAMPLE_INTERVAL_SEC = _env_int("NETPROF_INTERVAL", 60)
 

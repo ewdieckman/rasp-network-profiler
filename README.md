@@ -12,6 +12,28 @@ Every minute it measures two separate paths:
 |------|------------------|----------------------------|
 | **Router / gateway** | ping latency + packet loss to your own router | a **wifi / local** problem |
 | **Internet** | ping latency + packet loss to `1.1.1.1`, `8.8.8.8`, `9.9.9.9` | an **ISP / internet** problem |
+| **Wired baseline** *(optional)* | the **same** gateway + internet targets pinged over an ethernet cable | see below — the decisive test |
+
+### The wired baseline (the most decisive test)
+
+If you also plug the device into ethernet, the collector pings the **same router
+and the same internet hosts over the cable** every sample, alongside the wifi
+measurements. Because both paths share the same router and ISP, comparing them
+isolates the wifi:
+
+- Internet slow over **wifi** but fine over the **cable** → it's your **wifi**
+  (the ISP is proven fine).
+- Internet slow over **both** wifi and cable → it's your **internet / ISP**.
+
+The verdict uses this automatically and will say e.g. *"internet problems
+disappear on the wired baseline, so it's the wifi, not the ISP."* The baseline is
+skipped automatically whenever no cable is connected — wifi-only still works
+exactly as before.
+
+> The baseline forces traffic out each interface (`ping -I <iface>` on Linux,
+> `ping -b <iface>` on macOS). This works out of the box on Raspberry Pi OS and
+> macOS. If wired rows show 100% loss despite a working cable, your `ping` binary
+> may lack the capability to bind an interface — `sudo setcap cap_net_raw+ep $(which ping)`.
 
 It also records **wifi signal strength**, **link rate**, **DNS lookup time**, and
 runs an hourly **speed test** (optional). By comparing the router path to the
@@ -76,6 +98,8 @@ or just run `report.py` from `cron`/`launchd` the same way.
 
 ## What you'll see (graphs)
 
+- **WiFi vs Wired baseline — internet latency & loss** — the decisive charts when
+  a cable is plugged in: the same internet over wifi vs over ethernet.
 - **Latency: router vs internet** — the key chart. Orange = your wifi/router.
 - **Packet loss** — same split.
 - **Wifi signal strength (dBm)** — closer to 0 is stronger; < -67 marginal, < -75 weak.
@@ -95,6 +119,8 @@ All settings are environment variables (see `config.py` for the full list):
 | `NETPROF_SPEEDTEST_INTERVAL` | 3600 | seconds between speed tests |
 | `NETPROF_PORT` | 8080 | dashboard port |
 | `NETPROF_WIFI_IFACE` | auto | force a wifi interface (e.g. `wlan0`, `en0`) |
+| `NETPROF_ETHERNET` | 1 | set `0` to disable the wired baseline |
+| `NETPROF_ETH_IFACE` | auto | force a wired interface (e.g. `eth0`) |
 | `NETPROF_RETENTION_DAYS` | 0 | auto-delete data older than N days (0 = keep) |
 
 On Linux, set these in the systemd unit (`Environment=NETPROF_INTERVAL=30`); on

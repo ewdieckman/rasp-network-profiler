@@ -63,13 +63,14 @@ async function loadSummary() {
   let issues = '';
   if (v.wifi_issues.length) issues += '<ul><b>Wifi/local:</b>' + v.wifi_issues.map(x=>`<li>${x}</li>`).join('') + '</ul>';
   if (v.internet_issues.length) issues += '<ul><b>Internet/ISP:</b>' + v.internet_issues.map(x=>`<li>${x}</li>`).join('') + '</ul>';
-  el.innerHTML = `<div class="label">${v.label}</div><h2>${v.headline}</h2>${issues}`;
+  const wiredNote = v.wired_note ? `<p style="margin:10px 0 0;font-size:14px;">🔌 ${v.wired_note}</p>` : '';
+  el.innerHTML = `<div class="label">${v.label}</div><h2>${v.headline}</h2>${wiredNote}${issues}`;
 
   document.getElementById('stats').innerHTML =
     stat('Router ping (p95)', s.gateway.ping_p95_ms, ' ms') +
-    stat('Router loss (max)', s.gateway.loss_max_pct, ' %') +
-    stat('Internet ping (p95)', s.internet.ping_p95_ms, ' ms') +
-    stat('Internet loss (max)', s.internet.loss_max_pct, ' %') +
+    stat('Internet ping · wifi (p95)', s.internet.ping_p95_ms, ' ms') +
+    (s.wired.present ? stat('Internet ping · wired (p95)', s.wired.ping_p95_ms, ' ms') : '') +
+    stat('Internet loss · wifi (max)', s.internet.loss_max_pct, ' %') +
     stat('Wifi signal (min)', s.wifi.signal_min_dbm, ' dBm') +
     stat('DNS (median)', s.dns.median_ms, ' ms') +
     stat('Samples', s.sample_count, '') +

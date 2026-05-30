@@ -66,19 +66,114 @@ def wifi_interface(preferred="auto"):
     return None
 
 
-def ping(host, count, timeout_per_ping):
+def wired_interface(preferred="auto"):
+    """
+    Return a wired (ethernet) interface name, or None if there isn't one.
+    Only returns an interface that currently has a cable plugged in (carrier),
+    so the wired baseline is skipped when nothing is connected.
+    """
+    if preferred and preferred != "auto":
+        return preferred if interface_has_carrier(preferred) else None
+    if IS_LINUX:
+        for path in sorted(glob.glob("/sys/class/net/*")):
+            iface = path.split("/")[-1]
+            if iface == "lo":
+                continue
+            # Skip wireless and virtual interfaces.
+            if os.path.exists(f"{path}/wireless"):
+                continue
+            if not os.path.exists(f"{path}/device"):
+                continue  # no physical device -> bridge/veth/docker etc.
+            # ARPHRD_ETHER == 1
+            try:
+                with open(f"{path}/type") as f:
+                    if f.read().strip() != "1":
+                        continue
+            except OSError:
+                continue
+            if interface_has_carrier(iface):
+                return iface
+        return None
+    if IS_MAC:
+        out = _run(["networksetup", "-listallhardwareports"], timeout=5)
+        if out:
+            # Match Ethernet / Thunderbolt Ethernet / USB ... LAN ports.
+            for m in re.finditer(r"Hardware Port:\s*([^\n]*?)\s*\nDevice:\s*(\w+)", out):
+                port, dev = m.group(1), m.group(2)
+                if re.search(r"ethernet|lan", port, re.I):
+                    if interface_has_carrier(dev):
+                        return dev
+        return None
+    return None
+
+
+def interface_has_carrier(iface):
+    """True if the interface link is up (cable plugged in)."""
+    if not iface:
+        return False
+    if IS_LINUX:
+        try:
+            with open(f"/sys/class/net/{iface}/carrier") as f:
+                return f.read().strip() == "1"
+        except OSError:
+            return False
+    if IS_MAC:
+        out = _run(["ifconfig", iface], timeout=5)
+        return bool(out and "status: active" in out)
+    return False
+
+
+def gateway_for_interface(iface):
+    """
+    Return the default gateway reachable via a specific interface, or None.
+    Used so the wired and wifi paths each ping their own router hop correctly,
+    even when they sit on different subnets.
+    """
+    if not iface:
+        return None
+    if IS_LINUX:
+        out = _run(["ip", "route", "show", "default", "dev", iface], timeout=5)
+        if out:
+            m = re.search(r"default via (\d+\.\d+\.\d+\.\d+)", out)
+            if m:
+                return m.group(1)
+        # Fall back: any 'via' route on this interface.
+        out = _run(["ip", "route", "show", "dev", iface], timeout=5)
+        if out:
+            m = re.search(r"via (\d+\.\d+\.\d+\.\d+)", out)
+            if m:
+                return m.group(1)
+    if IS_MAC:
+        out = _run(["route", "-n", "get", "-ifscope", iface, "default"], timeout=5)
+        if out:
+            m = re.search(r"gateway:\s*(\d+\.\d+\.\d+\.\d+)", out)
+            if m:
+                return m.group(1)
+    return None
+
+
+def ping(host, count, timeout_per_ping, interface=None):
     """
     Ping a host. Returns (avg_rtt_ms, loss_pct). On total failure returns
     (None, 100.0). loss is always returned so outages are recorded, not lost.
+
+    If `interface` is given, traffic is forced out that interface (Linux `-I`,
+    macOS `-b`). This is how the wired baseline pings the same hosts over the
+    cable instead of over the OS-chosen default route.
     """
     if not host:
         return (None, 100.0)
     if IS_MAC:
-        # macOS -W is per-packet timeout in milliseconds.
-        cmd = ["ping", "-c", str(count), "-W", str(timeout_per_ping * 1000), host]
+        # macOS -W is per-packet timeout in milliseconds; -b binds the interface.
+        cmd = ["ping", "-c", str(count), "-W", str(timeout_per_ping * 1000)]
+        if interface:
+            cmd += ["-b", interface]
     else:
-        # Linux -W is per-packet timeout in seconds.
-        cmd = ["ping", "-c", str(count), "-W", str(timeout_per_ping), host]
+        # Linux -W is per-packet timeout in seconds; -I binds the interface.
+        cmd = ["ping", "-c", str(count), "-W", str(timeout_per_ping)]
+        if interface:
+            cmd += ["-I", interface]
+    cmd.append(host)
     out = _run(cmd, timeout=count * (timeout_per_ping + 1) + 5)
     if not out:
         return (None, 100.0)

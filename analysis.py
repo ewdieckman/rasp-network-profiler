@@ -64,8 +64,11 @@ def summarize(hours=24, path=None):
     """
     metrics = [
         "gateway_ping_ms", "gateway_loss_pct",
-        "internet_ping_ms", "dns_ms",
+        "internet_ping_ms", "internet_loss_pct", "dns_ms",
         "wifi_signal_dbm", "wifi_link_quality_pct", "wifi_bitrate_mbps",
+        # Wired baseline (present only when a cable is plugged in).
+        "eth_gateway_ping_ms", "eth_gateway_loss_pct",
+        "eth_internet_ping_ms", "eth_internet_loss_pct",
     ]
     # Per-target internet loss columns.
     for label, _ in config.INTERNET_TARGETS:
@@ -84,10 +87,19 @@ def summarize(hours=24, path=None):
     signal = col("wifi_signal_dbm")
     bitrate = col("wifi_bitrate_mbps")
 
-    # Average internet loss across targets.
-    inet_loss = []
-    for label, _ in config.INTERNET_TARGETS:
-        inet_loss.extend(col(f"loss_{label}_pct"))
+    # Average internet loss across targets (prefer the aggregate column written
+    # by newer collectors; fall back to per-target columns for old data).
+    inet_loss = col("internet_loss_pct")
+    if not inet_loss:
+        for label, _ in config.INTERNET_TARGETS:
+            inet_loss.extend(col(f"loss_{label}_pct"))
+
+    # Wired baseline series.
+    eth_gw_ping = col("eth_gateway_ping_ms")
+    eth_gw_loss = col("eth_gateway_loss_pct")
+    eth_inet_ping = col("eth_internet_ping_ms")
+    eth_inet_loss = col("eth_internet_loss_pct")
+    eth_present = len(series.get("eth_internet_ping_ms", [])) > 0
 
     sample_count = len(series.get("gateway_ping_ms", []))
 
@@ -114,6 +126,15 @@ def summarize(hours=24, path=None):
             "signal_median_dbm": _round(_median(signal)),
             "signal_min_dbm": _round(min(signal) if signal else None),
             "bitrate_median_mbps": _round(_median(bitrate)),
+        },
+        "wired": {
+            "present": eth_present,
+            "gateway_ping_median_ms": _round(_median(eth_gw_ping)),
+            "gateway_loss_max_pct": _round(max(eth_gw_loss) if eth_gw_loss else None),
+            "ping_median_ms": _round(_median(eth_inet_ping)),
+            "ping_p95_ms": _round(_pct(eth_inet_ping, 0.95)),
+            "loss_avg_pct": _round(_avg(eth_inet_loss)),
+            "loss_max_pct": _round(max(eth_inet_loss) if eth_inet_loss else None),
         },
     }
     s["verdict"] = _verdict(s)
@@ -181,6 +202,36 @@ def _verdict(s):
         elif extra_loss >= INTERNET_LOSS_WARN_PCT:
             inet_issues.append(f"some packet loss out on the internet (up to {_round(il)}%)")
 
+    # --- Wired baseline: the decisive cross-check ---
+    # If the internet looks slow/lossy over wifi, but a cable to the SAME router
+    # and ISP is clean, then the ISP is fine and the problem is the wifi link.
+    # If even the cable is bad, it's genuinely the internet/ISP.
+    wired_note = None
+    wired = s.get("wired") or {}
+    if wired.get("present"):
+        wp = wired["ping_p95_ms"]
+        wl = wired["loss_max_pct"]
+        wired_clean = (
+            (wp is None or wp < INTERNET_PING_WARN_MS) and
+            (wl is None or wl < INTERNET_LOSS_WARN_PCT)
+        )
+        wired_bad = (
+            (wp is not None and wp >= INTERNET_PING_BAD_MS) or
+            (wl is not None and wl >= INTERNET_LOSS_BAD_PCT)
+        )
+        if inet_issues and wired_clean:
+            # Reattribute: the internet itself is fine over the cable.
+            wired_note = ("The internet was slow/lossy over wifi, but the wired "
+                          "baseline to the same router and ISP is clean — so this is a "
+                          "WIFI problem, not your internet provider.")
+            wifi_issues = wifi_issues + ["internet problems disappear on the wired baseline (so it's the wifi, not the ISP)"]
+            inet_issues = []
+        elif inet_issues and wired_bad:
+            wired_note = ("The wired baseline sees the same internet slowness as wifi — "
+                          "this confirms an INTERNET / ISP problem, not your wifi.")
+        elif not inet_issues and not wifi_issues:
+            wired_note = "Wired baseline confirms a healthy connection."
+
     if not wifi_issues and not inet_issues:
         label = "healthy"
         headline = "No significant problems detected — both your wifi and internet look healthy in this window."
@@ -199,6 +250,7 @@ def _verdict(s):
         "headline": headline,
         "wifi_issues": wifi_issues,
         "internet_issues": inet_issues,
+        "wired_note": wired_note,
     }
 
 

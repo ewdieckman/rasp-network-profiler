@@ -31,6 +31,22 @@ _env = Environment(
 
 METRIC_GROUPS = [
     {
+        "title": "WiFi vs Wired baseline — internet latency",
+        "desc": "The decisive comparison. Both lines go to the same internet over "
+                "the same router/ISP. If wifi is worse than the wired cable, the "
+                "wifi is the bottleneck. If both are equally bad, it's the ISP. "
+                "(Wired only appears if a cable is plugged in.)",
+        "unit": "ms",
+        "series": [("internet_ping_ms", "wifi"), ("eth_internet_ping_ms", "wired")],
+    },
+    {
+        "title": "WiFi vs Wired baseline — packet loss",
+        "desc": "Same comparison for packet loss. Loss on wifi but not on the cable "
+                "means a wifi problem; loss on both means an upstream/ISP problem.",
+        "unit": "%",
+        "series": [("internet_loss_pct", "wifi"), ("eth_internet_loss_pct", "wired")],
+    },
+    {
         "title": "Latency: router (wifi) vs internet",
         "desc": "If the orange 'router' line spikes, it's your wifi/local link. "
                 "If only the internet lines spike, it's your ISP.",
@@ -107,14 +123,21 @@ def text_summary(s):
         lines.append("  Internet / ISP findings:")
         for it in v["internet_issues"]:
             lines.append(f"    - {it}")
+    if v.get("wired_note"):
+        lines.append(f"  Wired baseline: {v['wired_note']}")
     lines.append("")
     g, i, w = s["gateway"], s["internet"], s["wifi"]
     lines.append("ROUTER (wifi/local path):")
     lines.append(f"    ping median {g['ping_median_ms']} ms / p95 {g['ping_p95_ms']} ms")
     lines.append(f"    loss avg {g['loss_avg_pct']}% / max {g['loss_max_pct']}%")
-    lines.append("INTERNET (best of targets):")
+    lines.append("INTERNET over WIFI (best of targets):")
     lines.append(f"    ping median {i['ping_median_ms']} ms / p95 {i['ping_p95_ms']} ms")
     lines.append(f"    loss avg {i['loss_avg_pct']}% / max {i['loss_max_pct']}%")
+    wired = s.get("wired") or {}
+    if wired.get("present"):
+        lines.append("INTERNET over WIRED baseline:")
+        lines.append(f"    ping median {wired['ping_median_ms']} ms / p95 {wired['ping_p95_ms']} ms")
+        lines.append(f"    loss avg {wired['loss_avg_pct']}% / max {wired['loss_max_pct']}%")
     lines.append("DNS:")
     lines.append(f"    median {s['dns']['median_ms']} ms / p95 {s['dns']['p95_ms']} ms")
     lines.append("WIFI:")

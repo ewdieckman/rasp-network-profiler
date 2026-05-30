@@ -31,6 +31,7 @@
   <div class="verdict" style="background: {{ badge_color }};">
     <div class="label">{{ verdict.label }}</div>
     <h2>{{ verdict.headline }}</h2>
+    {% if verdict.wired_note %}<p style="margin:10px 0 0; font-size:14px;">🔌 {{ verdict.wired_note }}</p>{% endif %}
   </div>
 
   <div class="cols">
@@ -53,8 +54,12 @@
     <table>
       <tr><td>Router ping (median / p95)</td><td>{{ s.gateway.ping_median_ms }} / {{ s.gateway.ping_p95_ms }} ms</td></tr>
       <tr><td>Router packet loss (avg / max)</td><td>{{ s.gateway.loss_avg_pct }} / {{ s.gateway.loss_max_pct }} %</td></tr>
-      <tr><td>Internet ping (median / p95)</td><td>{{ s.internet.ping_median_ms }} / {{ s.internet.ping_p95_ms }} ms</td></tr>
-      <tr><td>Internet packet loss (avg / max)</td><td>{{ s.internet.loss_avg_pct }} / {{ s.internet.loss_max_pct }} %</td></tr>
+      <tr><td>Internet ping over wifi (median / p95)</td><td>{{ s.internet.ping_median_ms }} / {{ s.internet.ping_p95_ms }} ms</td></tr>
+      <tr><td>Internet packet loss over wifi (avg / max)</td><td>{{ s.internet.loss_avg_pct }} / {{ s.internet.loss_max_pct }} %</td></tr>
+      {% if s.wired.present %}
+      <tr><td><b>Internet ping over wired (median / p95)</b></td><td>{{ s.wired.ping_median_ms }} / {{ s.wired.ping_p95_ms }} ms</td></tr>
+      <tr><td><b>Internet packet loss over wired (avg / max)</b></td><td>{{ s.wired.loss_avg_pct }} / {{ s.wired.loss_max_pct }} %</td></tr>
+      {% endif %}
       <tr><td>DNS (median / p95)</td><td>{{ s.dns.median_ms }} / {{ s.dns.p95_ms }} ms</td></tr>
       <tr><td>Wifi signal (median / min)</td><td>{{ s.wifi.signal_median_dbm }} / {{ s.wifi.signal_min_dbm }} dBm</td></tr>
       {% if s.speedtests.count %}<tr><td>Speed test (median ↓/↑, {{ s.speedtests.count }} runs)</td><td>{{ s.speedtests.download_median_mbps }} / {{ s.speedtests.upload_median_mbps }} Mbps</td></tr>{% endif %}
