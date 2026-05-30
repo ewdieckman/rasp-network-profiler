@@ -1,6 +1,8 @@
 # --- Project data / generated output ---
-data/              # SQLite database, WAL files, and service logs
-report.html        # generated reports
+# SQLite database, WAL files, and service logs
+data/
+# generated reports
+report.html
 *.log
 
 # --- Python ---
