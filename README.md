@@ -157,6 +157,7 @@ report.py      standalone HTML/text report generator
 db.py          SQLite storage (data/netprofiler.db)
 config.py      settings (env-overridable)
 templates/     dashboard HTML
+uninstall.sh   remove services + data
 systemd/       Linux service units
 macos/         launchd agent plists
 ```
@@ -184,6 +185,18 @@ launchctl load ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
 
 If `requirements.txt` changed, also run `.venv/bin/pip install -r requirements.txt`
 before restarting.
+
+## Uninstall
+
+To remove the services, venv, and optionally the collected data:
+
+```bash
+cd /path/to/rasp-network-profiler
+./uninstall.sh
+```
+
+Works on both Linux and macOS. It will prompt before deleting your data.
+To start fresh, run the install script again after uninstalling.
 
 ## Notes
 
