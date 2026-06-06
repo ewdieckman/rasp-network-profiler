@@ -102,6 +102,30 @@ def gather_chart_data(hours, path=None):
             "title": g["title"], "desc": g["desc"],
             "unit": g["unit"], "datasets": datasets,
         })
+    # Append speedtest charts from the separate speedtests table.
+    rows = db.fetch_speedtests(analysis.since_iso(hours), path=path)
+    if rows:
+        dl_pts = [{"x": r["ts"], "y": r["download_mbps"]}
+                  for r in rows if r["download_mbps"] is not None]
+        ul_pts = [{"x": r["ts"], "y": r["upload_mbps"]}
+                  for r in rows if r["upload_mbps"] is not None]
+        ping_pts = [{"x": r["ts"], "y": r["ping_ms"]}
+                    for r in rows if r["ping_ms"] is not None]
+        charts.append({
+            "title": "Speed test — throughput",
+            "desc": "Download and upload bandwidth from periodic speed tests.",
+            "unit": "Mbps", "pointRadius": 3,
+            "datasets": [
+                {"label": "download", "data": dl_pts},
+                {"label": "upload", "data": ul_pts},
+            ],
+        })
+        charts.append({
+            "title": "Speed test — ping",
+            "desc": "Latency to the speed-test server.",
+            "unit": "ms", "pointRadius": 3,
+            "datasets": [{"label": "ping", "data": ping_pts}],
+        })
     return charts
 
 
@@ -147,7 +171,8 @@ def text_summary(s):
     if st.get("count"):
         lines.append("SPEED TESTS:")
         lines.append(f"    {st['count']} runs; download median {st['download_median_mbps']} Mbps "
-                     f"(min {st['download_min_mbps']}), upload median {st['upload_median_mbps']} Mbps")
+                     f"(min {st['download_min_mbps']}), upload median {st['upload_median_mbps']} Mbps"
+                     f", ping median {st['ping_median_ms']} ms")
     lines.append("=" * 64)
     return "\n".join(lines)
 

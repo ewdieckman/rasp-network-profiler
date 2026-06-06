@@ -148,12 +148,14 @@ def _speedtest_summary(hours, path):
         return {"count": 0}
     down = [r["download_mbps"] for r in rows if r["download_mbps"] is not None]
     up = [r["upload_mbps"] for r in rows if r["upload_mbps"] is not None]
+    ping = [r["ping_ms"] for r in rows if r["ping_ms"] is not None]
     return {
         "count": len(rows),
         "download_median_mbps": _round(_median(down)),
         "download_min_mbps": _round(min(down) if down else None),
         "upload_median_mbps": _round(_median(up)),
         "upload_min_mbps": _round(min(up) if up else None),
+        "ping_median_ms": _round(_median(ping)),
     }
 
 

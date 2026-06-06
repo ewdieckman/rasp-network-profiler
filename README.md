@@ -105,7 +105,8 @@ or just run `report.py` from `cron`/`launchd` the same way.
 - **Wifi signal strength (dBm)** — closer to 0 is stronger; < -67 marginal, < -75 weak.
 - **Wifi link rate (Mbps)**
 - **DNS resolution time (ms)**
-- **Speed tests** (in the summary numbers)
+- **Speed test — throughput** (download & upload Mbps over time)
+- **Speed test — ping** (latency to the speed-test server)
 
 ## Configuration
 
@@ -140,6 +141,30 @@ templates/     dashboard HTML
 systemd/       Linux service units
 macos/         launchd agent plists
 ```
+
+## Updating an existing install
+
+Pull the latest code and restart the services — no reinstall needed:
+
+**Linux / Raspberry Pi:**
+```bash
+cd /path/to/rasp-network-profiler
+git pull
+sudo systemctl restart netprofiler-collector netprofiler-dashboard
+```
+
+**macOS:**
+```bash
+cd /path/to/rasp-network-profiler
+git pull
+launchctl unload ~/Library/LaunchAgents/com.netprofiler.collector.plist
+launchctl unload ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
+launchctl load ~/Library/LaunchAgents/com.netprofiler.collector.plist
+launchctl load ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
+```
+
+If `requirements.txt` changed, also run `.venv/bin/pip install -r requirements.txt`
+before restarting.
 
 ## Notes
 

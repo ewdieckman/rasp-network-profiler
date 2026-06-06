@@ -62,7 +62,7 @@
       {% endif %}
       <tr><td>DNS (median / p95)</td><td>{{ s.dns.median_ms }} / {{ s.dns.p95_ms }} ms</td></tr>
       <tr><td>Wifi signal (median / min)</td><td>{{ s.wifi.signal_median_dbm }} / {{ s.wifi.signal_min_dbm }} dBm</td></tr>
-      {% if s.speedtests.count %}<tr><td>Speed test (median ↓/↑, {{ s.speedtests.count }} runs)</td><td>{{ s.speedtests.download_median_mbps }} / {{ s.speedtests.upload_median_mbps }} Mbps</td></tr>{% endif %}
+      {% if s.speedtests.count %}<tr><td>Speed test (median ↓/↑/ping, {{ s.speedtests.count }} runs)</td><td>{{ s.speedtests.download_median_mbps }} / {{ s.speedtests.upload_median_mbps }} Mbps · {{ s.speedtests.ping_median_ms }} ms</td></tr>{% endif %}
     </table>
   </div>
 
@@ -90,7 +90,7 @@ CHARTS.forEach((c) => {
     data: { datasets: c.datasets.map((ds, k) => ({
       label: ds.label, data: ds.data,
       borderColor: palette[k % palette.length], backgroundColor: palette[k % palette.length],
-      borderWidth: 1.5, pointRadius: 0, tension: 0.2,
+      borderWidth: 1.5, pointRadius: c.pointRadius || 0, tension: 0.2,
     })) },
     options: {
       responsive: true, animation: false, interaction: { mode: 'index', intersect: false },

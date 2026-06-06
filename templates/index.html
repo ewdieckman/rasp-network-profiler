@@ -74,7 +74,9 @@ async function loadSummary() {
     stat('Wifi signal (min)', s.wifi.signal_min_dbm, ' dBm') +
     stat('DNS (median)', s.dns.median_ms, ' ms') +
     stat('Samples', s.sample_count, '') +
-    (s.speedtests.count ? stat('Download (median)', s.speedtests.download_median_mbps, ' Mbps') : '');
+    (s.speedtests.count ? stat('Download (median)', s.speedtests.download_median_mbps, ' Mbps') : '') +
+    (s.speedtests.count ? stat('Upload (median)', s.speedtests.upload_median_mbps, ' Mbps') : '') +
+    (s.speedtests.count ? stat('Speedtest ping (median)', s.speedtests.ping_median_ms, ' ms') : '');
 }
 
 async function loadCharts() {
@@ -91,7 +93,7 @@ async function loadCharts() {
       type:'line',
       data:{ datasets: c.datasets.map((ds,k)=>({ label:ds.label, data:ds.data,
         borderColor:palette[k%palette.length], backgroundColor:palette[k%palette.length],
-        borderWidth:1.5, pointRadius:0, tension:0.2 })) },
+        borderWidth:1.5, pointRadius:c.pointRadius||0, tension:0.2 })) },
       options:{ responsive:true, animation:false, interaction:{mode:'index',intersect:false},
         scales:{ x:{type:'time', time:{tooltipFormat:'MMM d HH:mm'}}, y:{title:{display:true,text:c.unit}} },
         plugins:{ legend:{position:'bottom'} } },
