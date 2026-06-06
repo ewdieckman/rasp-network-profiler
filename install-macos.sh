@@ -13,7 +13,17 @@ python3 -m venv "$DIR/.venv"
 mkdir -p "$DIR/data" "$AGENTS"
 
 if ! command -v speedtest >/dev/null 2>&1; then
-  echo "==> (optional) For speed tests: brew install speedtest-cli"
+  if command -v brew >/dev/null 2>&1; then
+    echo "==> (optional) Ookla 'speedtest' CLI not found."
+    read -rp "    Install it via Homebrew now? [y/N] " ans
+    if [[ "${ans,,}" == "y" ]]; then
+      brew install speedtest-cli
+    else
+      echo "    Skipped. To install later: brew install speedtest-cli"
+    fi
+  else
+    echo "==> (optional) For speed tests: brew install speedtest-cli"
+  fi
 fi
 
 for label in com.netprofiler.collector com.netprofiler.dashboard; do

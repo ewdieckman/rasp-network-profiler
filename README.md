@@ -51,8 +51,9 @@ git clone <this repo> rasp-network-profiler
 cd rasp-network-profiler
 ./install.sh
 ```
-This sets up a virtualenv, installs `iw` if needed, and runs the collector +
-dashboard as systemd services that start on boot and auto-restart.
+This sets up a virtualenv, installs `iw` if needed, optionally installs the
+[Ookla speedtest CLI](https://www.speedtest.net/apps/cli), and runs the collector
++ dashboard as systemd services that start on boot and auto-restart.
 
 ### macOS
 ```bash
@@ -61,6 +62,24 @@ cd rasp-network-profiler
 ```
 Installs the same two processes as launchd agents. Wi-Fi signal is read via
 `system_profiler` (no sudo needed).
+
+### Speed test CLI (optional)
+
+The installer will offer to set this up, or you can do it manually:
+
+**Raspberry Pi / Debian:**
+```bash
+curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+sudo apt-get install speedtest
+```
+
+**macOS:**
+```bash
+brew install speedtest-cli
+```
+
+Without it, speed tests fall back to the Python `speedtest-cli` package if
+installed, or are skipped entirely. Everything else works fine either way.
 
 Then open **http://<device-ip>:8080/** (or http://localhost:8080 on a Mac).
 

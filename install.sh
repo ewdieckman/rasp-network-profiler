@@ -21,11 +21,19 @@ if ! command -v iw >/dev/null 2>&1; then
   sudo apt-get update -qq && sudo apt-get install -y iw
 fi
 
-# 3. Optional Ookla speedtest CLI (skip silently if unavailable)
+# 3. Optional Ookla speedtest CLI
 if ! command -v speedtest >/dev/null 2>&1; then
-  echo "==> (optional) Ookla 'speedtest' CLI not found. Speed tests will fall back"
-  echo "    to the python speedtest-cli if installed, or be skipped. To install:"
-  echo "    https://www.speedtest.net/apps/cli"
+  echo "==> (optional) Ookla 'speedtest' CLI not found."
+  read -rp "    Install it now? [y/N] " ans
+  if [[ "${ans,,}" == "y" ]]; then
+    echo "==> Installing Ookla speedtest CLI"
+    sudo apt-get install -y curl >/dev/null 2>&1 || true
+    curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+    sudo apt-get install -y speedtest
+  else
+    echo "    Skipped. Speed tests will use python speedtest-cli if installed, or be disabled."
+    echo "    To install later: https://www.speedtest.net/apps/cli"
+  fi
 fi
 
 # 4. Install systemd units with paths substituted
