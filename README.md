@@ -8,11 +8,11 @@ your internet**.
 
 Every minute it measures two separate paths:
 
-| Path | What it measures | What a problem there means |
-|------|------------------|----------------------------|
-| **Router / gateway** | ping latency + packet loss to your own router | a **wifi / local** problem |
-| **Internet** | ping latency + packet loss to `1.1.1.1`, `8.8.8.8`, `9.9.9.9` | an **ISP / internet** problem |
-| **Wired baseline** *(optional)* | the **same** gateway + internet targets pinged over an ethernet cable | see below — the decisive test |
+| Path                            | What it measures                                                      | What a problem there means    |
+| ------------------------------- | --------------------------------------------------------------------- | ----------------------------- |
+| **Router / gateway**            | ping latency + packet loss to your own router                         | a **wifi / local** problem    |
+| **Internet**                    | ping latency + packet loss to `1.1.1.1`, `8.8.8.8`, `9.9.9.9`         | an **ISP / internet** problem |
+| **Wired baseline** _(optional)_ | the **same** gateway + internet targets pinged over an ethernet cable | see below — the decisive test |
 
 ### The wired baseline (the most decisive test)
 
@@ -25,8 +25,8 @@ isolates the wifi:
   (the ISP is proven fine).
 - Internet slow over **both** wifi and cable → it's your **internet / ISP**.
 
-The verdict uses this automatically and will say e.g. *"internet problems
-disappear on the wired baseline, so it's the wifi, not the ISP."* The baseline is
+The verdict uses this automatically and will say e.g. _"internet problems
+disappear on the wired baseline, so it's the wifi, not the ISP."_ The baseline is
 skipped automatically whenever no cable is connected — wifi-only still works
 exactly as before.
 
@@ -41,25 +41,29 @@ internet path it produces a plain-language verdict:
 
 - Router slow/lossy → **it's your wifi**
 - Router fine but internet slow → **it's your ISP**
-- Weak signal explains *why* the wifi is struggling
+- Weak signal explains _why_ the wifi is struggling
 
 ## Install
 
 ### Raspberry Pi / Linux
+
 ```bash
-git clone <this repo> rasp-network-profiler
+git clone git@github.com:ewdieckman/rasp-network-profiler.git rasp-network-profiler
 cd rasp-network-profiler
 ./install.sh
 ```
+
 This sets up a virtualenv, installs `iw` if needed, optionally installs the
 [Ookla speedtest CLI](https://www.speedtest.net/apps/cli), and runs the collector
-+ dashboard as systemd services that start on boot and auto-restart.
+and dashboard as systemd services that start on boot and auto-restart.
 
 ### macOS
+
 ```bash
 cd rasp-network-profiler
 ./install-macos.sh
 ```
+
 Installs the same two processes as launchd agents. Wi-Fi signal is read via
 `system_profiler` (no sudo needed).
 
@@ -68,12 +72,14 @@ Installs the same two processes as launchd agents. Wi-Fi signal is read via
 The installer will offer to set this up, or you can do it manually:
 
 **Raspberry Pi / Debian:**
+
 ```bash
 curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
 sudo apt-get install speedtest
 ```
 
 **macOS:**
+
 ```bash
 brew install speedtest-cli
 ```
@@ -83,7 +89,46 @@ installed, or are skipped entirely. Everything else works fine either way.
 
 Then open **http://<device-ip>:8080/** (or http://localhost:8080 on a Mac).
 
+## Updating an existing install
+
+Pull the latest code and restart the services — no reinstall needed:
+
+**Linux / Raspberry Pi:**
+
+```bash
+cd /path/to/rasp-network-profiler
+git pull
+sudo systemctl restart netprofiler-collector netprofiler-dashboard
+```
+
+**macOS:**
+
+```bash
+cd /path/to/rasp-network-profiler
+git pull
+launchctl unload ~/Library/LaunchAgents/com.netprofiler.collector.plist
+launchctl unload ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
+launchctl load ~/Library/LaunchAgents/com.netprofiler.collector.plist
+launchctl load ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
+```
+
+If `requirements.txt` changed, also run `.venv/bin/pip install -r requirements.txt`
+before restarting.
+
+## Uninstall
+
+To remove the services, venv, and optionally the collected data:
+
+```bash
+cd /path/to/rasp-network-profiler
+./uninstall.sh
+```
+
+Works on both Linux and macOS. It will prompt before deleting your data.
+To start fresh, run the install script again after uninstalling.
+
 ## Run manually (no service)
+
 ```bash
 python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
 python3 collector.py        # start collecting (Ctrl-C to stop)
@@ -108,6 +153,7 @@ anywhere. It leads with the verdict, then key numbers, then the full charts.
 ### Auto-generate a report on a schedule
 
 **Linux (cron):** email yourself a fresh report every Monday:
+
 ```cron
 0 8 * * 1 /path/to/.venv/bin/python /path/to/report.py --days 7 --out /path/to/data/weekly.html
 ```
@@ -131,17 +177,17 @@ or just run `report.py` from `cron`/`launchd` the same way.
 
 All settings are environment variables (see `config.py` for the full list):
 
-| Var | Default | Meaning |
-|-----|---------|---------|
-| `NETPROF_INTERVAL` | 60 | seconds between samples |
-| `NETPROF_TARGET_1/2/3` | 1.1.1.1 / 8.8.8.8 / 9.9.9.9 | internet ping targets |
-| `NETPROF_SPEEDTEST` | 1 | set `0` to disable speed tests |
-| `NETPROF_SPEEDTEST_INTERVAL` | 3600 | seconds between speed tests |
-| `NETPROF_PORT` | 8080 | dashboard port |
-| `NETPROF_WIFI_IFACE` | auto | force a wifi interface (e.g. `wlan0`, `en0`) |
-| `NETPROF_ETHERNET` | 1 | set `0` to disable the wired baseline |
-| `NETPROF_ETH_IFACE` | auto | force a wired interface (e.g. `eth0`) |
-| `NETPROF_RETENTION_DAYS` | 0 | auto-delete data older than N days (0 = keep) |
+| Var                          | Default                     | Meaning                                       |
+| ---------------------------- | --------------------------- | --------------------------------------------- |
+| `NETPROF_INTERVAL`           | 60                          | seconds between samples                       |
+| `NETPROF_TARGET_1/2/3`       | 1.1.1.1 / 8.8.8.8 / 9.9.9.9 | internet ping targets                         |
+| `NETPROF_SPEEDTEST`          | 1                           | set `0` to disable speed tests                |
+| `NETPROF_SPEEDTEST_INTERVAL` | 3600                        | seconds between speed tests                   |
+| `NETPROF_PORT`               | 8080                        | dashboard port                                |
+| `NETPROF_WIFI_IFACE`         | auto                        | force a wifi interface (e.g. `wlan0`, `en0`)  |
+| `NETPROF_ETHERNET`           | 1                           | set `0` to disable the wired baseline         |
+| `NETPROF_ETH_IFACE`          | auto                        | force a wired interface (e.g. `eth0`)         |
+| `NETPROF_RETENTION_DAYS`     | 0                           | auto-delete data older than N days (0 = keep) |
 
 On Linux, set these in the systemd unit (`Environment=NETPROF_INTERVAL=30`); on
 macOS, add an `EnvironmentVariables` dict to the plist.
@@ -161,42 +207,6 @@ uninstall.sh   remove services + data
 systemd/       Linux service units
 macos/         launchd agent plists
 ```
-
-## Updating an existing install
-
-Pull the latest code and restart the services — no reinstall needed:
-
-**Linux / Raspberry Pi:**
-```bash
-cd /path/to/rasp-network-profiler
-git pull
-sudo systemctl restart netprofiler-collector netprofiler-dashboard
-```
-
-**macOS:**
-```bash
-cd /path/to/rasp-network-profiler
-git pull
-launchctl unload ~/Library/LaunchAgents/com.netprofiler.collector.plist
-launchctl unload ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
-launchctl load ~/Library/LaunchAgents/com.netprofiler.collector.plist
-launchctl load ~/Library/LaunchAgents/com.netprofiler.dashboard.plist
-```
-
-If `requirements.txt` changed, also run `.venv/bin/pip install -r requirements.txt`
-before restarting.
-
-## Uninstall
-
-To remove the services, venv, and optionally the collected data:
-
-```bash
-cd /path/to/rasp-network-profiler
-./uninstall.sh
-```
-
-Works on both Linux and macOS. It will prompt before deleting your data.
-To start fresh, run the install script again after uninstalling.
 
 ## Notes
 
