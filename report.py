@@ -91,13 +91,20 @@ def gather_chart_data(hours, path=None):
     charts = []
     for g in METRIC_GROUPS:
         datasets = []
+        has_eth = any(name.startswith("eth_") for name, _ in g["series"])
+        eth_empty = True
         for name, label in g["series"]:
             points = [
                 {"x": ts, "y": v}
                 for ts, v in series.get(name, [])
                 if v is not None
             ]
+            if name.startswith("eth_") and points:
+                eth_empty = False
             datasets.append({"label": label, "data": points})
+        # Skip wired comparison charts when no wired data was collected.
+        if has_eth and eth_empty:
+            continue
         charts.append({
             "title": g["title"], "desc": g["desc"],
             "unit": g["unit"], "datasets": datasets,
